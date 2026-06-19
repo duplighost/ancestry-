@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0d1728" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>Guitar / Spoltore — Credits Constellation Shooter</title>
+<style>
+  :root{
+    --bg:#0d1728; --gold:#f8e6bd; --line:#e5ce97;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;overflow:hidden;background:#071126;}
+  body{
+    font-family: Georgia, 'Times New Roman', serif;
+    color:var(--gold);
+    touch-action:none;
+    -webkit-user-select:none; user-select:none;
+    position:fixed; inset:0;
+    overscroll-behavior:none;
+  }
+  #stage{position:absolute; inset:0;}
+  canvas{display:block; width:100%; height:100%;}
+
+  /* ---------- Overlays ---------- */
+  .overlay{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    padding:24px; gap:14px; z-index:10;
+    background:
+      radial-gradient(circle at 50% 20%, rgba(214,184,111,.22), transparent 45%),
+      linear-gradient(135deg,#071126 0%, #10203a 55%, #090f1f 100%);
+  }
+  .overlay.hidden{display:none;}
+  .frame{
+    width:min(560px,92vw); max-height:92vh; overflow:auto;
+    border:3px solid rgba(229,206,151,.85); border-radius:26px;
+    padding:26px 22px; background:rgba(13,23,40,.55);
+    box-shadow:0 0 0 10px rgba(255,255,255,.02) inset, 0 18px 50px rgba(0,0,0,.5);
+  }
+  h1{
+    font-size:clamp(26px,7vw,40px); margin:.1em 0 .15em; font-weight:900;
+    letter-spacing:.5px; line-height:1.04; text-shadow:0 2px 0 #000;
+  }
+  .sub{font-size:clamp(13px,3.6vw,17px); color:#e8d1a0; font-style:italic; margin:0 0 6px;}
+  p.lead{font-size:clamp(13px,3.6vw,16px); color:#d9c79c; line-height:1.5; margin:8px 4px;}
+  .legend{display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin:12px 0 4px;}
+  .legend span{
+    font-size:12px; padding:4px 10px; border-radius:999px; border:2px solid;
+    background:#fff; color:#111; white-space:nowrap;
+  }
+  .btn{
+    appearance:none; cursor:pointer; font-family:inherit;
+    font-size:clamp(17px,4.6vw,21px); font-weight:800; letter-spacing:.5px;
+    color:#081327; background:linear-gradient(180deg,#fbe9bf,#e9c878);
+    border:3px solid #b98220; border-radius:999px;
+    padding:14px 34px; margin-top:10px;
+    box-shadow:0 6px 0 #8a5f15, 0 10px 22px rgba(0,0,0,.4);
+    transition:transform .05s ease, box-shadow .05s ease;
+  }
+  .btn:active{transform:translateY(4px); box-shadow:0 2px 0 #8a5f15, 0 6px 14px rgba(0,0,0,.4);}
+  .btn.secondary{
+    background:linear-gradient(180deg,#23365e,#16263f); color:#f3e2b4;
+    border-color:#6f8bc0; box-shadow:0 6px 0 #0c1830, 0 10px 22px rgba(0,0,0,.4);
+    font-size:clamp(14px,4vw,17px); padding:11px 24px;
+  }
+  .row{display:flex; gap:12px; flex-wrap:wrap; justify-content:center;}
+  .stats{display:flex; flex-wrap:wrap; gap:10px 26px; justify-content:center; margin:6px 0;}
+  .stat{min-width:120px;}
+  .stat .num{font-size:clamp(24px,7vw,38px); font-weight:900; color:#fbe9bf; line-height:1;}
+  .stat .lab{font-size:12px; color:#cdb98a; letter-spacing:.6px; text-transform:uppercase;}
+  .hint{font-size:12px; color:#b6a784; margin-top:8px;}
+  .grade{font-size:clamp(30px,9vw,52px); font-weight:900; color:#ffd982; text-shadow:0 2px 0 #000; margin:2px;}
+
+  /* ---------- In-game HUD ---------- */
+  #hud{
+    position:absolute; top:0; left:0; right:0; z-index:5;
+    display:flex; align-items:flex-start; justify-content:space-between;
+    padding:max(10px,env(safe-area-inset-top)) 14px 0; pointer-events:none;
+    font-variant-numeric:tabular-nums;
+  }
+  #hud.hidden{display:none;}
+  .hud-box{
+    background:rgba(8,16,33,.46); border:1.5px solid rgba(229,206,151,.35);
+    border-radius:14px; padding:6px 12px; backdrop-filter:blur(3px);
+  }
+  #score{font-size:clamp(20px,6vw,30px); font-weight:900; color:#fbe9bf; line-height:1;}
+  #scoreLab{font-size:10px; letter-spacing:.6px; color:#cdb98a; text-transform:uppercase;}
+  #waveInfo{text-align:right; font-size:13px; color:#e8d1a0;}
+  #waveInfo b{font-size:clamp(15px,4.5vw,19px); color:#fbe9bf; display:block;}
+  #pauseBtn{
+    pointer-events:auto; cursor:pointer; margin-left:8px;
+    background:rgba(8,16,33,.46); border:1.5px solid rgba(229,206,151,.35);
+    color:#f3e2b4; border-radius:12px; width:40px; height:40px; font-size:16px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #comboWrap{
+    position:absolute; left:50%; top:60px; transform:translateX(-50%);
+    z-index:5; text-align:center; pointer-events:none; opacity:0; transition:opacity .2s;
+  }
+  #comboWrap.show{opacity:1;}
+  #combo{font-size:clamp(22px,8vw,40px); font-weight:900; color:#ffd982; text-shadow:0 2px 0 #000,0 0 18px rgba(255,200,90,.6);}
+  #comboLab{font-size:11px; letter-spacing:1px; color:#ffe9bd; text-transform:uppercase;}
+  #banner{
+    position:absolute; left:0; right:0; top:38%; z-index:6; text-align:center;
+    pointer-events:none; font-weight:900; color:#fff;
+    font-size:clamp(22px,8vw,46px); text-shadow:0 3px 0 #000, 0 0 24px rgba(255,210,120,.7);
+    opacity:0;
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="game"></canvas>
+</div>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div class="hud-box">
+    <div id="score">0</div><div id="scoreLab">SCORE</div>
+  </div>
+  <div style="display:flex; align-items:flex-start;">
+    <div class="hud-box" id="waveInfo"><b>Wave 1</b><span id="remain">0 left</span></div>
+    <div id="pauseBtn">❚❚</div>
+  </div>
+</div>
+<div id="comboWrap"><div id="combo">x2</div><div id="comboLab">COMBO</div></div>
+<div id="banner"></div>
+
+<!-- Title -->
+<div id="title" class="overlay">
+  <div class="frame">
+    <div class="sub">the family credits roll</div>
+    <h1>Guitar / Spoltore<br>Constellation Shooter</h1>
+    <p class="lead">Every name from your ancestry atlas flies in, takes formation, and waits to be blasted — just like the end‑credits minigame. <b>Tap the names</b> to zap them. Chain hits for combos. Clear a whole formation for a bonus.</p>
+    <div class="legend" id="legendBox"></div>
+    <button class="btn" id="startBtn">▶ Start</button>
+    <div class="hint">Best on mobile · sound turns on when you start</div>
+  </div>
+</div>
+
+<!-- Pause -->
+<div id="pause" class="overlay hidden">
+  <div class="frame">
+    <h1>Paused</h1>
+    <div class="stats">
+      <div class="stat"><div class="num" id="pScore">0</div><div class="lab">Score</div></div>
+      <div class="stat"><div class="num" id="pWave">1</div><div class="lab">Wave</div></div>
+    </div>
+    <div class="row">
+      <button class="btn" id="resumeBtn">Resume</button>
+      <button class="btn secondary" id="quitBtn">End Run</button>
+    </div>
+    <label class="hint" style="display:flex;gap:8px;align-items:center;justify-content:center;margin-top:14px;cursor:pointer;">
+      <input type="checkbox" id="muteChk" /> mute sound
+    </label>
+  </div>
+</div>
+
+<!-- Game over -->
+<div id="over" class="overlay hidden">
+  <div class="frame">
+    <div class="sub" id="overSub">Atlas Complete</div>
+    <div class="grade" id="grade">A</div>
+    <div class="stats">
+      <div class="stat"><div class="num" id="fScore">0</div><div class="lab">Final Score</div></div>
+      <div class="stat"><div class="num" id="fBest">0</div><div class="lab">Best</div></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="num" id="fNames">0</div><div class="lab">Names Zapped</div></div>
+      <div class="stat"><div class="num" id="fAcc">0%</div><div class="lab">Accuracy</div></div>
+      <div class="stat"><div class="num" id="fCombo">0</div><div class="lab">Best Combo</div></div>
+    </div>
+    <button class="btn" id="againBtn">▶ Play Again</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   Guitar / Spoltore — Credits Constellation Shooter
+   Single-file, dependency-free, mobile-first canvas game.
+   ========================================================================= */
+(function(){
+"use strict";
+
+/* ---------------------------------------------------------------------------
+   1. NAME DATA  — pulled from the Full Name Atlas, tagged by category.
+   cat: d=direct spine, c=collateral, m=married-in, p=possible/unresolved,
+        n=notable historical, v=surname/place lead
+--------------------------------------------------------------------------- */
+const RAW = [
+  // --- Paternal: direct Guitar spine ---
+  ["John Guitar / Guitard","d"],["Emily Gordon","m"],["Gen. Odon Guitar","d"],
+  ["Kate Leonard","m"],["Odon Guitar Jr.","d"],["Florence Estill","m"],
+  ["Rear Adm. Wallace Estill Guitar","d"],["Janet Wolcott Atkins","m"],
+  ["Leonard “Len” Griswold Guitar","d"],["Alexander Duncan Guitar","d"],["Abigail Guitar","d"],
+  // John + Emily Gordon children & branches
+  ["David Gordon Guitar","c"],["Mary Jane Guitar","c"],["Elizabeth Guitar","c"],
+  ["John Guitar","c"],["Maria Louise Guitar","c"],["Emily Guitar","c"],
+  ["Harriet Herndon","m"],["James H. Guitar","c"],["D.G. Guitar","c"],
+  ["Bessie Guitar","c"],["Mattie Guitar","c"],["Hattie Guitar","c"],
+  ["William Guitar","c"],["Edward H. Guitar","c"],["John H. Guitar","c"],
+  // Odon + Kate Leonard descendants
+  ["Jeanette Guitar","c"],["Richard Allen Boyle","m"],["Mary Guitar","c"],
+  ["Robert Alexander Brown","m"],["Robert Brown","c"],["Templeton Brown","c"],
+  ["Jeanette Boyle Brown","c"],["Katharine Guitar","c"],["Abiel Leonard Guitar","c"],
+  ["Odon Guitar","c"],
+  // Gordon / Boyle / Leonard / Reeves
+  ["David Gordon","c"],["Jane Boyle","m"],["Major John Boyle","n"],
+  ["Chief Justice John Boyle","n"],["Judge Abiel Leonard","n"],["Jeanette Reeves","m"],
+  ["Benjamin H. Reeves","n"],["Abiel Leonard Jr.","c"],
+  // French origin & surname leads
+  ["Jean Guitard","p"],["Jean Guittard","p"],["de Guitard families","v"],["Guitard","v"],
+  ["Guittard","v"],["Guittar","v"],["Guitart","v"],["Bordeaux","v"],["Agen","v"],
+  ["Garonne","v"],["Guienne","v"],["Saintonge","v"],["Angoumois","v"],["Limousin","v"],
+  ["Nivernais","v"],["Puy-de-Dôme","v"],["Gironde","v"],["Haute-Garonne","v"],
+  ["Aveyron","v"],["Toulouse","v"],["Catalonia","v"],
+
+  // --- Center: the living bridge ---
+  ["Dr. Janet Dee Spoltore","d"],["Duncan Robert Spoltore","d"],
+  ["Mildred “Middy” Joyce Spoltore","d"],
+  ["Mary S. Cormier","d"],["Carol S. Golden","d"],["Jacqueline Wraight","d"],
+  ["John Wraight","m"],["Joelle Wraight","c"],["Raymond Cormier","c"],
+  ["Megan Cormier","m"],["Evangeline Cormier","c"],["Adeline Cormier","c"],
+  ["David Golden","m"],["Kyle Golden","c"],["Benjamin Golden","c"],["Robert Wolak","m"],
+  // headline historical sparks
+  ["Gov. William Bradford","n"],["Morrison Remick Waite","n"],["Barry Kennedy Atkins","n"],
+  ["Dora “Dee” Joyce Caldwell","n"],
+
+  // --- Maternal: Spoltore / Joyce wing ---
+  ["Albert Spoltore","d"],["Marguerite Fahrner Spoltore","m"],
+  ["Raffaele Spoltore","p"],["Diana Anna Maria De Cecco","p"],
+  ["Ralph Edward Spoltore Sr.","c"],["John Joseph Spoltore","c"],["Clara","m"],
+  ["Richard John Spoltore","c"],["A. Patricia Bowe Spoltore","m"],
+  ["Donald Joseph Spoltore","c"],["Flora “Dolly” Spoltore Flowers","c"],
+  ["Glendon Flowers","m"],["Dorothy “Dotsie” Spoltore Rutala","c"],
+  ["Anthony J. Rutala","m"],["Jessie Margaret Spoltore Delp","c"],["Samuel Delp","m"],
+  // Lanciano / De Cecco
+  ["Marianna Vincenza Spoltore","p"],["Silvio Olinto Nicola Spoltore","p"],
+  ["Lanciano","v"],["Chieti","v"],["Abruzzo","v"],["Italy","v"],
+  ["Federico Spoltore","p"],["Paolo Spoltore","p"],["De Cecco family","p"],
+  // Fahrner / Shaw
+  ["Johannes Fahrner","p"],["Flora Shaw Fahrner","p"],["Elizabeth Margaretta Fahrner","p"],
+  ["John Fahrner","p"],["Regina V. Fahrner","p"],["Duncan Fahrner Sr.","p"],
+  ["Carl Fahrner","p"],["Alexander “Alec” Fahrner","p"],
+  ["Swiss-German Fahrner line","v"],["Scottish Shaw line","v"],
+  // Joyce / Pool(e)
+  ["Arthur Y. Joyce","d"],["Mary A. Poole Joyce","m"],["Joy A. Danna","c"],
+  ["Michele “Middy” Youngblood","c"],["Lawrence “Larry” Caldwell","m"],["Charles Gosbin","p"],
+
+  // --- New England: Atkins / Terry / Griswold / Matson expansion ---
+  ["Arthur Kennedy Atkins","d"],["Frances Griswold Terry","d"],["Griswold Terry Atkins","c"],
+  ["Nathaniel Matson Terry","d"],["Frances Augusta Griswold","d"],["James Pease Terry","d"],
+  ["Catharine Ann Matson","d"],["James Luther Terry","c"],["Anna Ely Terry","c"],
+  ["Israel Newton Terry","c"],["Emily Huntington Butler","m"],["Catherine Matson Terry","c"],
+  ["Francis Augustus Terry","c"],["Charles Appleton Terry","c"],["Louisa Mather Terry","c"],
+  // Terry / Pease / Colton / Bradford
+  ["Samuel Terry","d"],["Ann Lobdell","m"],["Martha Crane","m"],["Benjamin Terry","c"],
+  ["Ephraim Terry","d"],["Thomas Terry","c"],["Mary Terry","c"],["Rebecca Terry","c"],
+  ["Jonathan Terry","c"],["Isaac Terry","c"],["Mary Kellogg","d"],["Solomon Terry","d"],
+  ["Margaret Pease","d"],["Robert Pease","c"],["John Pease","d"],["Ann Cummings","m"],
+  ["James Pease","d"],["Hannah Harmon","m"],["Joseph Pease","d"],["Prudence Olds","m"],
+  ["Sarah Colton","d"],["George Colton","c"],["Deborah Gardner","m"],["Ephraim Colton","c"],
+  ["Esther Marshfield","m"],["Josiah Colton","c"],["Ruth Allen","m"],
+  ["Maj. William Bradford","n"],["Alice Carpenter","m"],["Alice Bradford","d"],
+  ["William Adams","m"],["Alice Adams","d"],["Rev. Nathaniel Collins","d"],
+  ["Mary Whiting Collins","c"],["Ann Collins","d"],
+  // Matson / Ely / Waite / Griswold / Mather cloud
+  ["Thomas Matson","d"],["Amy Chambers","m"],["Mary Read","m"],["John Matson","c"],
+  ["Mary Colton","m"],["Joshua Matson","d"],["Elizabeth Thomas","m"],["Abigail Matson","c"],
+  ["Lionel Wheatley","m"],["Theodore Atkinson","p"],["Nathaniel Matson","d"],
+  ["Joanna Ely","d"],["Dinah Newton","d"],["Israel Matson","d"],["Catherine Johnson","m"],
+  ["Phoebe Ely","d"],["Stephen Johnson Matson","c"],["Esther Van Bergen","m"],
+  ["Sarah McCurdy Lord","m"],["Gov. William Alfred Matson","n"],["Lucy Ann Matson","c"],
+  ["Samuel Giles Matson","c"],["Susanna Matson","c"],["Remick Waite","m"],
+  ["Henry Matson Waite","c"],["Maria Selden","m"],["Charles William Waite","c"],
+  ["Betsey Barnum Waite","p"],["Horace Waite","c"],["Nancy Waite","c"],["Abby Maria Waite","c"],
+  ["Frederick William Waite","c"],["George Chapman Waite","c"],["Douglas Waite","c"],
+  ["Peter Berdan","m"],["Richard Waite","c"],["Alice Jane Voorhees","m"],["Lois Matson","c"],
+  ["Joanna Matson","c"],["Samuel Buckingham","m"],["Polly Sill","m"],["Anna Ely","d"],
+  ["Amy Matson","c"],["John Figg","m"],["Mary Adams","m"],["Ruth Matson","c"],
+  ["Joseph Sill","m"],["Giles Sill","c"],["Ruhama Sill","c"],["Elizabeth Matson","c"],
+  ["Timothy Mather","m"],["Jehoiada Mather","c"],["Eunice Mather","c"],["Reuben Mather","c"],
+  ["Asaph Mather","c"],["Eli Matson","c"],["Aaron Matson","c"],["Cady Matson","c"],
+  ["Deborah Matson","c"],["Samuel Sanford","m"],["Richard Sill Griswold","d"],
+  ["Frances Mather","d"],["George Griswold","d"],["Elizabeth Woodhull","d"],
+  ["James Mather","d"],["Caroline Tinker","m"],["Elizabeth Lee","d"],["James Woodhull","d"],
+  ["Ketura Strong","m"],["Samuel Mather","d"],["Lois Griswold","d"],["Sylvanus Tinker","m"],
+  ["Wealthy Gilbert","m"],["Matthew Griswold","d"],["Ann Wolcott","m"],["Phebe Hyde","m"],
+  ["Hannah Lynde","d"],["Samuel Hyde","c"],["Simon Lynde","d"],["Hannah Newdigate","m"],
+  ["Francis Willoughby","d"],["Nathaniel Lynde","d"],["Susannah Willoughby","m"],
+  ["Thomas Lee","d"],["Mary DeWolf","m"],["Stephen Lee","d"],["Abigail Lord","m"],
+  ["William Lord","c"],["Richard Woodhull","d"],["Temperance Fordham","m"],
+  ["John Smith","c"],["Selah Strong","m"],["Richard Mather","d"],["Catherine Wise","m"],
+  ["Catharine Atherton","d"],["William Ely","d"],["Elizabeth Smith","m"],["John Griswold","d"],
+  ["Hannah Lee","m"],["Richard Ely","d"],["Joane Phipps","m"],["Joseph Selden","m"],
+  ["Joseph Ely","d"],["Elihu Ely","d"]
+];
+
+// Categories: color (bg, border, ink), score, rarity weighting for shuffle
+const CATS = {
+  d:{bg:"#d9ecff",bd:"#70a3d7",ink:"#0d2d58",pts:150,bold:true,name:"direct spine"},
+  c:{bg:"#fff8e8",bd:"#e2c37b",ink:"#4a3a10",pts:100,bold:false,name:"collateral blood"},
+  m:{bg:"#f1f1f1",bd:"#b8b8b8",ink:"#333333",pts:80,bold:false,name:"married-in"},
+  p:{bg:"#fff0cc",bd:"#c98a22",ink:"#573100",pts:120,bold:false,dash:true,name:"possible lead"},
+  n:{bg:"#ffe2d4",bd:"#be5b3d",ink:"#521c12",pts:300,bold:true,name:"notable figure"},
+  v:{bg:"#e9e0ff",bd:"#9079cc",ink:"#281c5b",pts:90,bold:false,name:"surname / place"}
+};
+
+/* ---------------------------------------------------------------------------
+   2. CANVAS + VIRTUAL COORDINATE SYSTEM
+   Game world is a fixed 720 x 1280 portrait field, letterboxed to fit any
+   screen ("contain"). A camera adds zoom/pan/shake on top for the flourishes.
+--------------------------------------------------------------------------- */
+const VW = 720, VH = 1280;
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+let DPR = 1, sw = 0, sh = 0, fit = 1, offX = 0, offY = 0;
+
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+  sw = window.innerWidth; sh = window.innerHeight;
+  canvas.width = Math.round(sw * DPR);
+  canvas.height = Math.round(sh * DPR);
+  canvas.style.width = sw + "px";
+  canvas.style.height = sh + "px";
+  fit = Math.min(sw / VW, sh / VH);
+  offX = (sw - VW * fit) / 2;
+  offY = (sh - VH * fit) / 2;
+}
+window.addEventListener("resize", resize);
+window.addEventListener("orientationchange", ()=>setTimeout(resize,120));
+resize();
+
+// camera
+const cam = { x:VW/2, y:VH/2, z:1, tx:VW/2, ty:VH/2, tz:1, shake:0 };
+
+// screen(px) -> world(virtual)
+function toWorld(px, py){
+  const lx = (px - offX) / fit;          // virtual coords, pre-camera
+  const ly = (py - offY) / fit;
+  const wx = (lx - VW/2) / cam.z + cam.x;
+  const wy = (ly - VH/2) / cam.z + cam.y;
+  return { x:wx, y:wy };
+}
+
+/* ---------------------------------------------------------------------------
+   3. FORMATIONS — return a normalized [-1,1] position for item i of n.
+--------------------------------------------------------------------------- */
+const FORMS = {
+  circle(i,n){ const a=-Math.PI/2 + i/n*Math.PI*2; return [Math.cos(a), Math.sin(a)]; },
+  heart(i,n){
+    const t=i/n*Math.PI*2;
+    const x=16*Math.pow(Math.sin(t),3);
+    const y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);
+    return [x/17, -y/17];
+  },
+  star(i,n){
+    // sample along the perimeter of a 5-point star
+    const verts=[];
+    for(let k=0;k<10;k++){ const r=k%2?0.42:1; const a=-Math.PI/2 + k/10*Math.PI*2;
+      verts.push([Math.cos(a)*r, Math.sin(a)*r]); }
+    const seg=n/10, idx=Math.floor(i/seg), f=(i/seg)-idx;
+    const a=verts[idx%10], b=verts[(idx+1)%10];
+    return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f];
+  },
+  spiral(i,n){
+    const t=i/n, turns=2.6; const a=t*Math.PI*2*turns; const r=0.18+0.82*t;
+    return [Math.cos(a)*r, Math.sin(a)*r];
+  },
+  wave(i,n){
+    const t=n>1?i/(n-1):0.5; const x=-1+2*t; const y=0.55*Math.sin(t*Math.PI*3);
+    return [x*0.96, y];
+  },
+  tree(i,n){
+    // widening pyramid rows (a family "tree")
+    let row=0, used=0, cap=1;
+    while(used+cap<=i){ used+=cap; row++; cap=row+1; }
+    const inRow=i-used, rows=Math.ceil((Math.sqrt(8*n+1)-1)/2);
+    const y=-0.92 + (rows>1? row/(rows-1):0)*1.7;
+    const wide=(row+1);
+    const x=wide===1?0:(-1+2*(inRow/(wide-1)))*Math.min(0.95,0.25+row*0.22);
+    return [x,y];
+  },
+  diamond(i,n){
+    const a=-Math.PI/2 + i/n*Math.PI*2;
+    const c=Math.cos(a), s=Math.sin(a);
+    const k=1/(Math.abs(c)+Math.abs(s)); // square (rotated diamond)
+    return [c*k, s*k];
+  },
+  columns(i,n){
+    const cols=2, per=Math.ceil(n/cols), col=Math.floor(i/per), row=i%per;
+    const x=cols>1?(-0.6+col*1.2):0;
+    const y=per>1?(-0.9+row/(per-1)*1.8):0;
+    return [x,y];
+  }
+};
+const FORM_KEYS = Object.keys(FORMS);
+const FORM_LABEL = {
+  circle:"Ring", heart:"Heart", star:"Star", spiral:"Spiral",
+  wave:"Wave", tree:"Family Tree", diamond:"Diamond", columns:"Twin Columns"
+};
+
+/* ---------------------------------------------------------------------------
+   4. GAME STATE
+--------------------------------------------------------------------------- */
+const G = {
+  mode:"title",            // title | playing | paused | over
+  pool:[],                 // shuffled remaining RAW entries
+  targets:[],              // active name targets
+  particles:[],
+  lasers:[],
+  pops:[],                 // floating score text
+  stars:[],                // background starfield
+  cannon:{x:VW/2, y:VH-46, angle:-Math.PI/2, recoil:0},
+  score:0, wave:0, combo:0, bestCombo:0, comboTimer:0, mult:1,
+  shots:0, hits:0, zapped:0,
+  waveSize:9, formKey:"circle",
+  bannerT:0, t:0, started:false, muted:false
+};
+const BEST = (()=>{ try{return +localStorage.getItem("gsBest")||0;}catch(e){return 0;} })();
+G.best = BEST;
+
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function initStars(){
+  G.stars=[];
+  for(let i=0;i<70;i++) G.stars.push({
+    x:Math.random()*VW, y:Math.random()*VH,
+    r:Math.random()*1.8+0.4, tw:Math.random()*Math.PI*2,
+    sp:0.1+Math.random()*0.3
+  });
+}
+initStars();
+
+/* ---------------------------------------------------------------------------
+   5. TARGETS
+--------------------------------------------------------------------------- */
+function measure(text, weight){
+  ctx.font = `${weight} 26px Georgia, serif`;
+  return ctx.measureText(text).width;
+}
+
+function spawnWave(){
+  G.wave++;
+  G.waveSize = Math.min(13, 8 + Math.floor(G.wave/2));
+  if(G.pool.length === 0) G.pool = shuffle(RAW);     // recycle if exhausted
+  const batch = G.pool.splice(0, Math.min(G.waveSize, G.pool.length));
+  G.formKey = FORM_KEYS[(G.wave-1) % FORM_KEYS.length];
+  const n = batch.length;
+
+  // play-area for formation centre + radius (keep inside frame)
+  const cx=VW/2, cy=VH*0.46, rx=VW*0.40, ry=VH*0.32;
+
+  batch.forEach((entry,i)=>{
+    const [text,cat]=entry;
+    const c=CATS[cat];
+    const weight=c.bold?"700":"400";
+    // fit font so chip <= maxW
+    let fs=26, w=measure(text,weight);
+    const maxW=VW*0.62;
+    if(w>maxW){ fs=Math.max(15, 26*maxW/w); }
+    const [nx,ny]=FORMS[G.formKey](i,n);
+    const jitter=(Math.random()-0.5);
+    const tx=cx+nx*rx + jitter*10;
+    const ty=cy+ny*ry + (Math.random()-0.5)*10;
+    // spawn from a random screen edge, fly in
+    const edge=Math.random()*Math.PI*2;
+    const sx=cx+Math.cos(edge)*VW*0.9;
+    const sy=cy+Math.sin(edge)*VH*0.8;
+    G.targets.push({
+      text, cat, c, weight, fs,
+      x:sx, y:sy, tx, ty,
+      vx:0, vy:0,
+      settle:0,               // 0..1 arrival
+      bobPhase:Math.random()*Math.PI*2,
+      bobAmp:6+Math.random()*8,
+      life:0, hold:5.2+Math.random()*2.2,
+      state:"in", dead:false, scale:0.6, hw:0, hh:0
+    });
+  });
+  G.targetCount = n;
+  G.waveHits = 0;
+  showBanner("Wave "+G.wave+" · "+FORM_LABEL[G.formKey], "#ffe6b0");
+  // dramatic zoom punch toward the formation, easing back to full view
+  cam.tx=cx; cam.ty=cy; cam.tz=1.35;
+  setTimeout(()=>{ cam.tx=VW/2; cam.ty=VH/2; cam.tz=1; }, 650);
+}
+
+/* ---------------------------------------------------------------------------
+   6. EFFECTS
+--------------------------------------------------------------------------- */
+function burst(x,y,color,amount){
+  for(let i=0;i<amount;i++){
+    const a=Math.random()*Math.PI*2, sp=2+Math.random()*7;
+    G.particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,
+      life:1, decay:0.012+Math.random()*0.02, r:2+Math.random()*3.5, color});
+  }
+}
+function laser(x,y){
+  const c=G.cannon;
+  G.lasers.push({x1:c.x,y1:c.y,x2:x,y2:y,life:1});
+  c.angle=Math.atan2(y-c.y,x-c.x);
+  c.recoil=1;
+}
+function pop(x,y,text,color){ G.pops.push({x,y,text,color,life:1,vy:-1.1}); }
+function showBanner(text,color){ G.banner=text; G.bannerColor=color||"#fff"; G.bannerT=1.6; }
+
+/* ---------------------------------------------------------------------------
+   7. AUDIO — tiny procedural WebAudio (laser / explode / combo / clear)
+--------------------------------------------------------------------------- */
+let actx=null;
+function audioOn(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(actx&&actx.state==="suspended") actx.resume(); }
+function beep(type){
+  if(!actx||G.muted) return;
+  const t=actx.currentTime, o=actx.createOscillator(), g=actx.createGain();
+  o.connect(g); g.connect(actx.destination);
+  if(type==="laser"){ o.type="sawtooth"; o.frequency.setValueAtTime(900,t); o.frequency.exponentialRampToValueAtTime(180,t+0.12); g.gain.setValueAtTime(0.14,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.13); o.start(t); o.stop(t+0.14); }
+  else if(type==="explode"){ o.type="triangle"; o.frequency.setValueAtTime(420,t); o.frequency.exponentialRampToValueAtTime(70,t+0.22); g.gain.setValueAtTime(0.18,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.24); o.start(t); o.stop(t+0.25); }
+  else if(type==="combo"){ o.type="square"; const f=420+Math.min(G.combo,24)*32; o.frequency.setValueAtTime(f,t); g.gain.setValueAtTime(0.1,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.12); o.start(t); o.stop(t+0.13); }
+  else if(type==="clear"){ [523,659,784,1046].forEach((f,i)=>{ const oo=actx.createOscillator(),gg=actx.createGain(); oo.connect(gg); gg.connect(actx.destination); oo.type="triangle"; oo.frequency.value=f; gg.gain.setValueAtTime(0.0001,t+i*0.07); gg.gain.linearRampToValueAtTime(0.13,t+i*0.07+0.02); gg.gain.exponentialRampToValueAtTime(0.001,t+i*0.07+0.3); oo.start(t+i*0.07); oo.stop(t+i*0.07+0.32); }); }
+}
+
+/* ---------------------------------------------------------------------------
+   8. INPUT — tap to shoot (multi-touch friendly)
+--------------------------------------------------------------------------- */
+function fireAt(px,py){
+  if(G.mode!=="playing") return;
+  audioOn();
+  const w=toWorld(px,py);
+  laser(w.x,w.y);
+  beep("laser");
+  G.shots++;
+  // topmost target hit (search from last-drawn)
+  let hit=null;
+  for(let i=G.targets.length-1;i>=0;i--){
+    const t=G.targets[i];
+    if(t.dead||t.state==="out") continue;
+    const hw=t.hw||60, hh=t.hh||22;
+    if(w.x>=t.x-hw-8 && w.x<=t.x+hw+8 && w.y>=t.y-hh-8 && w.y<=t.y+hh+8){ hit=t; break; }
+  }
+  if(hit){
+    killTarget(hit);
+  } else {
+    // small miss feedback: combo decays faster
+    G.comboTimer=Math.max(0,G.comboTimer-0.4);
+  }
+}
+function killTarget(t){
+  t.dead=true; t.state="out";
+  G.hits++; G.zapped++; G.combo++; G.waveHits++;
+  G.bestCombo=Math.max(G.bestCombo,G.combo);
+  G.comboTimer=2.4;
+  G.mult=1+Math.min(G.combo*0.1, 4); // up to x5
+  const base=t.c.pts;
+  const gained=Math.round(base*G.mult);
+  G.score+=gained;
+  burst(t.x,t.y,t.c.bd, t.cat==="n"?34:20);
+  burst(t.x,t.y,"#ffffff", 6);
+  pop(t.x,t.y-10, "+"+gained, t.cat==="n"?"#ffd982":t.c.bd);
+  cam.shake=Math.min(14, cam.shake + (t.cat==="n"?10:5));
+  beep(G.combo>1?"combo":"explode"); beep("explode");
+  updateHUD();
+}
+
+const stage=document.getElementById("stage");
+stage.addEventListener("pointerdown",e=>{ e.preventDefault(); fireAt(e.clientX,e.clientY); }, {passive:false});
+// guard against double-tap zoom / scroll
+document.addEventListener("gesturestart",e=>e.preventDefault());
+document.addEventListener("dblclick",e=>e.preventDefault());
+
+/* ---------------------------------------------------------------------------
+   9. UPDATE
+--------------------------------------------------------------------------- */
+function update(dt){
+  G.t+=dt;
+  // camera easing
+  cam.x+=(cam.tx-cam.x)*Math.min(1,dt*6);
+  cam.y+=(cam.ty-cam.y)*Math.min(1,dt*6);
+  cam.z+=(cam.tz-cam.z)*Math.min(1,dt*6);
+  cam.shake*=Math.pow(0.001,dt);
+  if(cam.shake<0.05) cam.shake=0;
+
+  // starfield
+  for(const s of G.stars){ s.y+=s.sp*dt*30; if(s.y>VH){s.y=0;s.x=Math.random()*VW;} s.tw+=dt*2; }
+
+  if(G.mode==="playing"){
+    // combo timer
+    if(G.comboTimer>0){ G.comboTimer-=dt; if(G.comboTimer<=0){ G.combo=0; G.mult=1; updateCombo(); } }
+
+    // targets
+    for(const t of G.targets){
+      t.life+=dt;
+      if(t.state==="in"){
+        t.x+=(t.tx-t.x)*Math.min(1,dt*5);
+        t.y+=(t.ty-t.y)*Math.min(1,dt*5);
+        t.scale+=(1-t.scale)*Math.min(1,dt*6);
+        t.settle+=dt;
+        if(Math.abs(t.x-t.tx)<2 && Math.abs(t.y-t.ty)<2){ t.state="hold"; }
+      } else if(t.state==="hold"){
+        t.bobPhase+=dt*1.8;
+        t.x=t.tx+Math.cos(t.bobPhase)*4;
+        t.y=t.ty+Math.sin(t.bobPhase*1.3)*t.bobAmp*0.4;
+        t.hold-=dt;
+        if(t.hold<=0){ t.state="out"; t.flee=Math.random()*Math.PI*2; }
+      } else if(t.state==="out"){
+        // fly off & shrink (missed if not dead)
+        if(!t.dead){ t.x+=Math.cos(t.flee)*dt*260; t.y+=Math.sin(t.flee)*dt*260; }
+        t.scale-=dt*2.2;
+      }
+    }
+    // remove finished targets
+    G.targets=G.targets.filter(t=> !(t.scale<=0.02 || (t.dead)) );
+
+    // next wave when empty
+    if(G.targets.length===0){
+      if(G.waveHits>0 && G.waveHits===G.targetCount){
+        G.score+=300+G.wave*120;
+        showBanner("FORMATION CLEARED  +"+(300+G.wave*120), "#9effa6");
+        beep("clear");
+        updateHUD();
+      }
+      if(G.wave>=24){ endGame(true); }
+      else if(!G._waveQueued){ G._waveQueued=true; setTimeout(()=>{ G._waveQueued=false; if(G.mode==="playing") spawnWave(); }, 700); }
+    }
+  }
+
+  // particles / lasers / pops always animate
+  for(const p of G.particles){ p.x+=p.vx; p.y+=p.vy; p.vy+=0.12; p.vx*=0.98; p.life-=p.decay; }
+  G.particles=G.particles.filter(p=>p.life>0);
+  for(const l of G.lasers){ l.life-=dt*5; }
+  G.lasers=G.lasers.filter(l=>l.life>0);
+  for(const f of G.pops){ f.y+=f.vy; f.vy*=0.98; f.life-=dt*0.9; }
+  G.pops=G.pops.filter(f=>f.life>0);
+  if(G.cannon.recoil>0) G.cannon.recoil-=dt*4;
+  if(G.bannerT>0) G.bannerT-=dt;
+}
+
+/* ---------------------------------------------------------------------------
+   10. RENDER
+--------------------------------------------------------------------------- */
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+function render(){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  // background gradient (full screen, outside letterbox too)
+  const bg=ctx.createLinearGradient(0,0,sw,sh);
+  bg.addColorStop(0,"#071126"); bg.addColorStop(.55,"#10203a"); bg.addColorStop(1,"#090f1f");
+  ctx.fillStyle=bg; ctx.fillRect(0,0,sw,sh);
+
+  // enter world transform
+  ctx.save();
+  const shX=(Math.random()-0.5)*cam.shake, shY=(Math.random()-0.5)*cam.shake;
+  ctx.translate(offX,offY);
+  ctx.scale(fit,fit);
+  ctx.translate(VW/2+shX, VH/2+shY);
+  ctx.scale(cam.z,cam.z);
+  ctx.translate(-cam.x,-cam.y);
+
+  // play-field vignette panel
+  const pg=ctx.createRadialGradient(VW/2,VH*0.28,80, VW/2,VH*0.4,VH*0.7);
+  pg.addColorStop(0,"rgba(214,184,111,.10)"); pg.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=pg; ctx.fillRect(0,0,VW,VH);
+
+  // stars
+  for(const s of G.stars){
+    ctx.globalAlpha=0.4+0.4*Math.sin(s.tw);
+    ctx.fillStyle="#dfe9ff"; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,7); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // lasers
+  for(const l of G.lasers){
+    ctx.globalAlpha=l.life;
+    ctx.strokeStyle="#bfe3ff"; ctx.lineWidth=5; ctx.lineCap="round";
+    ctx.shadowColor="#8fd0ff"; ctx.shadowBlur=18;
+    ctx.beginPath(); ctx.moveTo(l.x1,l.y1); ctx.lineTo(l.x2,l.y2); ctx.stroke();
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(l.x1,l.y1); ctx.lineTo(l.x2,l.y2); ctx.stroke();
+    ctx.shadowBlur=0;
+  }
+  ctx.globalAlpha=1;
+
+  // targets (name chips)
+  ctx.textAlign="center"; ctx.textBaseline="middle";
+  for(const t of G.targets){
+    const sc=t.scale;
+    if(sc<=0.02) continue;
+    ctx.font=`${t.weight} ${t.fs}px Georgia, serif`;
+    const tw=ctx.measureText(t.text).width;
+    const padX=14, padY=9;
+    const w=tw+padX*2, h=t.fs+padY*2;
+    t.hw=w/2; t.hh=h/2;
+    ctx.save();
+    ctx.translate(t.x,t.y); ctx.scale(sc,sc);
+    // glow for notable
+    if(t.cat==="n"){ ctx.shadowColor="rgba(255,150,90,.8)"; ctx.shadowBlur=20; }
+    else { ctx.shadowColor="rgba(0,0,0,.35)"; ctx.shadowBlur=8; }
+    roundRect(-w/2,-h/2,w,h,h/2);
+    ctx.fillStyle=t.c.bg; ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.lineWidth=2.5; ctx.strokeStyle=t.c.bd;
+    if(t.c.dash){ ctx.setLineDash([6,5]); } else ctx.setLineDash([]);
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=t.c.ink; ctx.fillText(t.text,0,1);
+    ctx.restore();
+  }
+
+  // particles
+  for(const p of G.particles){
+    ctx.globalAlpha=Math.max(0,p.life);
+    ctx.fillStyle=p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+
+  // floating score pops
+  ctx.textAlign="center";
+  for(const f of G.pops){
+    ctx.globalAlpha=Math.max(0,f.life);
+    ctx.font="700 30px Georgia, serif";
+    ctx.fillStyle=f.color; ctx.shadowColor="#000"; ctx.shadowBlur=6;
+    ctx.fillText(f.text,f.x,f.y); ctx.shadowBlur=0;
+  }
+  ctx.globalAlpha=1;
+
+  // cannon
+  drawCannon();
+
+  ctx.restore();
+}
+
+function drawCannon(){
+  const c=G.cannon;
+  ctx.save();
+  ctx.translate(c.x, c.y + c.recoil*8);
+  // base
+  ctx.fillStyle="#16263f"; ctx.strokeStyle="#9ec4ff"; ctx.lineWidth=3;
+  roundRect(-46,-6,92,40,12); ctx.fill(); ctx.stroke();
+  // barrel
+  ctx.save();
+  ctx.rotate(c.angle+Math.PI/2);
+  const bg=ctx.createLinearGradient(0,-44,0,8);
+  bg.addColorStop(0,"#fbe9bf"); bg.addColorStop(1,"#b98220");
+  ctx.fillStyle=bg; ctx.strokeStyle="#7a5410"; ctx.lineWidth=2.5;
+  roundRect(-11,-46,22,52,8); ctx.fill(); ctx.stroke();
+  // muzzle flash
+  if(c.recoil>0.4){ ctx.globalAlpha=(c.recoil-0.4); ctx.fillStyle="#fff6c8";
+    ctx.beginPath(); ctx.arc(0,-46,12,0,7); ctx.fill(); ctx.globalAlpha=1; }
+  ctx.restore();
+  // hub
+  ctx.fillStyle="#9ec4ff"; ctx.beginPath(); ctx.arc(0,8,12,0,7); ctx.fill();
+  ctx.restore();
+}
+
+/* ---------------------------------------------------------------------------
+   11. HUD / DOM glue
+--------------------------------------------------------------------------- */
+const $=id=>document.getElementById(id);
+const elScore=$("score"), elRemain=$("remain"), elWaveInfo=$("waveInfo").querySelector("b");
+const elComboWrap=$("comboWrap"), elCombo=$("combo");
+const elBanner=$("banner");
+
+function updateHUD(){
+  elScore.textContent=G.score.toLocaleString();
+  elWaveInfo.textContent="Wave "+G.wave;
+  const left=G.targets.filter(t=>!t.dead&&t.state!=="out").length;
+  elRemain.textContent=left+" name"+(left===1?"":"s")+" left";
+  updateCombo();
+}
+function updateCombo(){
+  if(G.combo>=2){ elComboWrap.classList.add("show"); elCombo.textContent="x"+G.mult.toFixed(1).replace(/\.0$/,""); }
+  else elComboWrap.classList.remove("show");
+}
+function renderBanner(){
+  if(G.bannerT>0){ elBanner.style.opacity=Math.min(1,G.bannerT*1.4); elBanner.textContent=G.banner; elBanner.style.color=G.bannerColor; }
+  else elBanner.style.opacity=0;
+}
+
+/* ---------------------------------------------------------------------------
+   12. FLOW: start / pause / end
+--------------------------------------------------------------------------- */
+function startGame(){
+  audioOn();
+  G.mode="playing"; G.started=true;
+  G.score=0; G.wave=0; G.combo=0; G.bestCombo=0; G.comboTimer=0; G.mult=1;
+  G.shots=0; G.hits=0; G.zapped=0;
+  G.targets=[]; G.particles=[]; G.lasers=[]; G.pops=[];
+  G.pool=shuffle(RAW); G._waveQueued=false;
+  $("title").classList.add("hidden");
+  $("over").classList.add("hidden");
+  $("pause").classList.add("hidden");
+  $("hud").classList.remove("hidden");
+  updateHUD();
+  spawnWave();
+}
+function pauseGame(){
+  if(G.mode!=="playing") return;
+  G.mode="paused";
+  $("pScore").textContent=G.score.toLocaleString();
+  $("pWave").textContent=G.wave;
+  $("pause").classList.remove("hidden");
+}
+function resumeGame(){ if(G.mode!=="paused")return; G.mode="playing"; $("pause").classList.add("hidden"); }
+function endGame(won){
+  G.mode="over";
+  if(G.score>G.best){ G.best=G.score; try{localStorage.setItem("gsBest",G.best);}catch(e){} }
+  const acc=G.shots?Math.round(G.hits/G.shots*100):0;
+  $("overSub").textContent=won?"Atlas Complete — every formation cleared":"Run Ended";
+  $("fScore").textContent=G.score.toLocaleString();
+  $("fBest").textContent=G.best.toLocaleString();
+  $("fNames").textContent=G.zapped;
+  $("fAcc").textContent=acc+"%";
+  $("fCombo").textContent=G.bestCombo;
+  // grade
+  let grade="C";
+  const s=G.score;
+  if(s>22000) grade="S"; else if(s>16000) grade="A"; else if(s>10000) grade="B"; else if(s>5000) grade="C"; else grade="D";
+  $("grade").textContent=grade;
+  $("hud").classList.add("hidden");
+  $("pause").classList.add("hidden");
+  $("over").classList.remove("hidden");
+}
+
+// buttons
+$("startBtn").addEventListener("click",startGame);
+$("againBtn").addEventListener("click",startGame);
+$("resumeBtn").addEventListener("click",resumeGame);
+$("quitBtn").addEventListener("click",()=>endGame(false));
+$("pauseBtn").addEventListener("click",pauseGame);
+$("muteChk").addEventListener("change",e=>{ G.muted=e.target.checked; });
+
+// legend on title
+(function buildLegend(){
+  const box=$("legendBox");
+  for(const k in CATS){ const c=CATS[k];
+    const el=document.createElement("span");
+    el.textContent=c.name;
+    el.style.background=c.bg; el.style.borderColor=c.bd; el.style.color=c.ink;
+    if(c.dash) el.style.borderStyle="dashed";
+    box.appendChild(el);
+  }
+})();
+
+/* ---------------------------------------------------------------------------
+   13. MAIN LOOP
+--------------------------------------------------------------------------- */
+let last=performance.now();
+function frame(now){
+  let dt=(now-last)/1000; last=now;
+  if(dt>0.05) dt=0.05;          // clamp after tab switch
+  if(G.mode!=="paused") update(dt);
+  render();
+  renderBanner();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// pause when tab hidden
+document.addEventListener("visibilitychange",()=>{ if(document.hidden && G.mode==="playing") pauseGame(); });
+
+})();
+</script>
+</body>
+</html>
